@@ -257,7 +257,7 @@ int main() {
     const int seq_length = 10;
 
     // Load and process data
-    std::vector<std::vector<int64_t>> data = load_data("arlin_transcripts.txt");
+    std::vector<std::vector<int64_t>> data = load_data("text_data.txt");
     std::vector<std::vector<std::vector<int64_t>>> batches = make_batches(data, batch_size);
 
     // Instantiate the GPT model
