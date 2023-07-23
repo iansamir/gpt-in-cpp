@@ -6,8 +6,14 @@
 #include <sstream>
 #include <vector>
 
-// Define the NewGELU Module
 struct NewGELU : torch::nn::Module {
+    /*
+    Make a custom activation function, which is a modification of 
+    the Gaussian Error Linear Unit (GELU) function. We just inherit from the torch::nn::Module base class, 
+    making it a PyTorch module that can be integrated into larger models. The forward method applies the activation 
+    function to its input tensor.
+    */
+
     torch::Device device = torch::kCPU; // Default device
 
     // Constructor
@@ -26,8 +32,12 @@ struct NewGELU : torch::nn::Module {
     }
 };
 
-// Define the CausalSelfAttention Module
 struct CausalSelfAttention : torch::nn::Module {
+    /*
+    Want to do self-attention. The attention operation is applied in the forward method. This module also includes two linear 
+    layers and two dropout layers for its computations.
+    */
+
     int n_head, n_embd;
     torch::nn::Linear c_attn{nullptr}, c_proj{nullptr};
     torch::nn::Dropout attn_dropout{nullptr}, resid_dropout{nullptr};
@@ -71,8 +81,13 @@ struct CausalSelfAttention : torch::nn::Module {
     }
 };
 
-// Define the Block Module
 struct Block : torch::nn::Module {
+    /*
+    A basic block of a transformer model, which consists of a layer of causal self attention 
+    followed by a feedforward neural network, with layer normalization and dropout applied at various points. The 
+    calculations for a forward pass through the block are defined in the forward method.
+    */
+
     torch::nn::LayerNorm ln_1{nullptr}, ln_2{nullptr};
     CausalSelfAttention attn{nullptr};
     torch::nn::Linear c_fc{nullptr}, c_proj{nullptr};
@@ -98,8 +113,13 @@ struct Block : torch::nn::Module {
     }
 };
 
-// Define the GPT Module
 struct GPT : torch::nn::Module {
+    /*
+    Take a vector of sentences (as strings), split each sentence into words, and assign a 
+    unique integer ID to each word. These IDs are then used to represent the sentences as sequences of integers. 
+    Return these sequences in the same order as the input sentences.
+    */
+
     torch::nn::Embedding wte{nullptr}, wpe{nullptr};
     torch::nn::Dropout drop{nullptr};
     torch::nn::ModuleList h;
@@ -149,17 +169,6 @@ struct GPT : torch::nn::Module {
     }
 };
 
-std::vector<std::vector<int64_t>> load_data(const std::string& filename) {
-    std::vector<std::string> sentences;
-    std::ifstream file(filename);
-    std::string line;
-
-    while (std::getline(file, line)) {
-        sentences.push_back(line);
-    }
-
-    return tokenize(sentences);
-}
 
 // Simple tokenizer that splits sentences into words and maps each word to a unique integer ID
 std::vector<std::vector<int64_t>> tokenize(const std::vector<std::string>& sentences) {
@@ -185,6 +194,18 @@ std::vector<std::vector<int64_t>> tokenize(const std::vector<std::string>& sente
     return tokenized_sentences;
 }
 
+// Loads data from text file and tokenizes
+std::vector<std::vector<int64_t>> load_data(const std::string& filename) {
+    std::vector<std::string> sentences;
+    std::ifstream file(filename);
+    std::string line;
+
+    while (std::getline(file, line)) {
+        sentences.push_back(line);
+    }
+
+    return tokenize(sentences);
+}
 
 // Function to generate batches of data and pad sequences within a batch to the same length
 std::vector<std::vector<std::vector<int64_t>>> make_batches(const std::vector<std::vector<int64_t>>& data, size_t batch_size) {
@@ -213,6 +234,14 @@ std::vector<std::vector<std::vector<int64_t>>> make_batches(const std::vector<st
 }
 
 int main() {
+    /*
+    Specify model paramaters, load and process data. Then, instantiate GPT and an Adam Optimizer
+    and train the model on the data for a specified number of epochs. 
+    
+    During each epoch, the function calculates the loss on the data, backpropagates the loss through the model to 
+    compute the gradients, and updates the model's parameters. After training, the function uses the model to generate 
+    a prediction on a random input.
+    */
     torch::Device device = torch::kCUDA;
     if (!torch::cuda::is_available()) {
         std::cout << "CUDA not available, reverting to CPU." << std::endl;
